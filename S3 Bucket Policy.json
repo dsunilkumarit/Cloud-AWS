@@ -1,0 +1,123 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Creates two IAM roles and creates an S3 bucket with a bucket policy",
+  "Parameters": {
+    "S3BucketName": {
+      "Description": "Name of the S3 Bucket",
+      "Type": "String",
+      "Default": "",
+      "ConstraintDescription": "Bucket Name should be identical."
+    },
+    "Role1st": {
+      "Description": "Managed Access to S3 bucket",
+      "Type": "String",
+      "Default": "",
+      "ConstraintDescription": "Please enter a valid name."
+    },
+    "Role2nd": {
+      "Description": "Read and Write Access to S3 bucket",
+      "Type": "String",
+      "Default": "",
+      "ConstraintDescription": "Please enter a valid name."
+    }
+  },
+
+  "Resources": {
+    "Role1": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": {
+          "Ref": "Role1st"
+        },
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [{
+            "Effect": "Allow",
+            "Principal": {
+              "Service": [
+                "s3.amazonaws.com"
+              ]
+            },
+            "Action": [
+              "sts:AssumeRole"
+            ]
+          }]
+        }
+      }
+    },
+    "Role2": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": {
+          "Ref": "Role2nd"
+        },
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [{
+            "Effect": "Allow",
+            "Principal": {
+              "Service": [
+                "s3.amazonaws.com"
+              ]
+            },
+            "Action": [
+              "sts:AssumeRole"
+            ]
+          }]
+        }
+      }
+    },
+    "S3Bucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "BucketName": {
+          "Ref": "S3BucketName"
+        }
+      }
+    },
+    "S3BucketPolicy": {
+      "Type": "AWS::S3::BucketPolicy",
+      "Properties": {
+        "Bucket": {
+          "Ref": "S3Bucket"
+        },
+        "PolicyDocument": {
+          "Statement": [{
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": {
+                  "Fn::GetAtt": ["Role1", "Arn"]
+                }
+              },
+              "Action": "s3:*",
+              "Resource": {
+                "Fn::Join": ["", ["arn:aws:s3:::", {
+                  "Ref": "S3Bucket"
+                }, "/*"]]
+              }
+            },
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": {
+                  "Fn::GetAtt": ["Role2", "Arn"]
+                }
+              },
+              "Action": [
+                "s3:GetObject",
+                "s3:PutObject",
+                "s3:DeleteObject"
+              ],
+              "Resource": {
+                "Fn::Join": ["", ["arn:aws:s3:::", {
+                  "Ref": "S3Bucket"
+                }, "/*"]]
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+
+}
